@@ -83,8 +83,11 @@ router.post('/check-deadlines', auth, async (req, res) => {
             projectName: task.project?.name,
             deadline: task.deadline
           });
-          const sent = await sendEmail(currentUser.email, subject, html);
-          if (sent) await Notification.findByIdAndUpdate(notif._id, { emailSent: true });
+          sendEmail(currentUser.email, subject, html)
+            .then(sent => {
+              if (sent) Notification.findByIdAndUpdate(notif._id, { emailSent: true }).exec();
+            })
+            .catch(err => console.error('Deadline email failed:', err));
         }
       } catch (dupErr) {
         // Duplicate — notification already exists, skip silently

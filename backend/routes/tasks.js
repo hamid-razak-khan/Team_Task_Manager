@@ -36,7 +36,7 @@ router.post('/', [auth, roleCheck(['Admin'])], async (req, res) => {
       // Fetch user details for all assigned members
       const assignedUsers = await User.find({ _id: { $in: assignedTo } }, 'name email');
 
-      await Promise.all(assignedUsers.map(async (member) => {
+      Promise.all(assignedUsers.map(async (member) => {
         // 1. Create in-app notification
         const notif = await Notification.create({
           userId: member._id,

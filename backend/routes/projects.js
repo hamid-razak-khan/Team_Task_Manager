@@ -34,7 +34,7 @@ router.post('/', [auth, roleCheck(['Admin'])], async (req, res) => {
     if (members && members.length > 0) {
       const memberUsers = await User.find({ _id: { $in: members } }, 'name email');
 
-      await Promise.all(memberUsers.map(async (member) => {
+      Promise.all(memberUsers.map(async (member) => {
         // 1. In-app notification
         const notif = await Notification.create({
           userId: member._id,
@@ -102,7 +102,7 @@ router.put('/:id', [auth, roleCheck(['Admin'])], async (req, res) => {
       if (newMemberIds.length > 0) {
         const newMemberUsers = await User.find({ _id: { $in: newMemberIds } }, 'name email');
 
-        await Promise.all(newMemberUsers.map(async (member) => {
+        Promise.all(newMemberUsers.map(async (member) => {
           const notif = await Notification.create({
             userId: member._id,
             message: `📁 You have been added to project: "${project.name}"`,

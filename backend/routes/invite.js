@@ -40,7 +40,9 @@ router.post('/', [auth, roleCheck(['Admin'])], async (req, res) => {
       </div>
     `;
 
-    await sendEmail(email, "You're invited to join TaskMaster", html);
+    // Send email asynchronously in the background so the UI doesn't hang
+    sendEmail(email, "You're invited to join TaskMaster", html)
+      .catch(err => console.error('Background invite email failed:', err));
 
     res.json({ message: 'Invite sent successfully', invite });
   } catch (err) {
