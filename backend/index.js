@@ -35,7 +35,7 @@ const cookieParser = require('cookie-parser');
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
 app.use(cors({
-  origin: FRONTEND_URL,
+  origin: true,
   credentials: true,
 }));
 app.use(express.json());
@@ -44,7 +44,7 @@ app.use(cookieParser());
 // ── Socket.IO ─────────────────────────────────────────────────────────────────
 const io = new Server(server, {
   cors: {
-    origin: FRONTEND_URL,
+    origin: true,
     methods: ['GET', 'POST'],
     credentials: true,
   },
