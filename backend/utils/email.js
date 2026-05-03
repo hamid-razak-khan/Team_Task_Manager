@@ -1,9 +1,8 @@
-const SibApiV3Sdk = require('@getbrevo/brevo');
+const { TransactionalEmailsApi, SendSmtpEmail, ApiClient } = require('@getbrevo/brevo');
 
-// Initialize Brevo API client
-const brevoClient = SibApiV3Sdk.ApiClient.instance;
-brevoClient.authentications['api-key'].apiKey = process.env.BREVO_API_KEY;
-const transactionalApi = new SibApiV3Sdk.TransactionalEmailsApi();
+// Initialize Brevo TransactionalEmailsApi with API key
+const apiInstance = new TransactionalEmailsApi();
+apiInstance.authentications['apiKey'].apiKey = process.env.BREVO_API_KEY;
 
 /**
  * Send a transactional email via Brevo.
@@ -21,13 +20,13 @@ const sendEmail = async (to, subject, html) => {
   }
 
   try {
-    const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+    const sendSmtpEmail = new SendSmtpEmail();
     sendSmtpEmail.sender = { name: 'TaskMaster', email: process.env.EMAIL_USER || 'noreply@taskmaster.app' };
     sendSmtpEmail.to = [{ email: to }];
     sendSmtpEmail.subject = subject;
     sendSmtpEmail.htmlContent = html;
 
-    const result = await transactionalApi.sendTransacEmail(sendSmtpEmail);
+    const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
     console.log(`[Email] ✅ Sent to ${to} via Brevo — "${subject}" (ID: ${result?.body?.messageId || 'N/A'})`);
     return true;
   } catch (err) {
