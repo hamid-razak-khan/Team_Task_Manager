@@ -1,121 +1,160 @@
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Create reusable transporter using Gmail SMTP
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true, // SSL
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  // Force IPv4 because Railway's IPv6 routing often drops SMTP connections to Gmail
+  family: 4,
+});
 
 /**
- * Send an email notification using Resend API.
+ * Send an email notification.
  * All failures are caught and logged — they never crash the server.
  *
  * @param {string} to      - recipient email
  * @param {string} subject - email subject
  * @param {string} html    - HTML email body
- * @returns {Promise<boolean>} true if successful, false otherwise
  */
 const sendEmail = async (to, subject, html) => {
+  // Silently skip if email credentials are not configured
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.warn('[Email] Skipped — EMAIL_USER or EMAIL_PASS not set in .env');
+    return false;
+  }
+
   try {
-    const { data, error } = await resend.emails.send({
-      from: 'TaskMaster <onboarding@resend.dev>',
-      to: [to],
-      subject: subject,
-      html: html,
+    await transporter.sendMail({
+      from: `"TaskMaster" <${process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      html,
     });
-
-    if (error) {
-      console.error('Resend email error:', error);
-      return false;
-    }
-
-    console.log(`Email sent successfully via Resend to ${to} (ID: ${data.id})`);
+    console.log(`[Email] ✅ Sent to ${to} — "${subject}"`);
     return true;
   } catch (err) {
-    console.error('Resend exception:', err.message);
+    console.error(`[Email] ❌ Failed to send to ${to}:`, err.message);
     return false;
   }
 };
 
-/**
- * Helper to generate a standardized email template.
- */
-const getBaseTemplate = (title, content, actionUrl, actionText) => `
-  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px; border-radius: 8px;">
-    <div style="background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-      <h2 style="color: #111827; margin-top: 0;">${title}</h2>
-      <div style="color: #4b5563; line-height: 1.6; font-size: 16px;">
-        ${content}
+// ─────────────────────────────────────────────
+// Email Templates
+// ─────────────────────────────────────────────
+
+const taskAssignedEmail = ({ userName, taskTitle, projectName, deadline }) => ({
+  subject: `📋 New Task Assigned: ${taskTitle}`,
+  html: `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0B0F19; color: #e2e8f0; border-radius: 16px; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, #7c3aed, #3b82f6); padding: 32px 40px;">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #fff;">✅ TaskMaster</h1>
+        <p style="margin: 8px 0 0; color: rgba(255,255,255,0.8); font-size: 14px;">Team Task Manager</p>
       </div>
-      ${actionUrl ? `
-      <div style="margin-top: 30px;">
-        <a href="${actionUrl}" style="background-color: #8b5cf6; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
-          ${actionText}
-        </a>
+      <div style="padding: 36px 40px;">
+        <h2 style="color: #a78bfa; margin: 0 0 8px;">New Task Assigned</h2>
+        <p style="color: #94a3b8; margin: 0 0 28px;">Hello <strong style="color: #e2e8f0;">${userName}</strong>, a new task has been assigned to you.</p>
+
+        <div style="background: #1F2937; border: 1px solid #374151; border-radius: 12px; padding: 24px; margin-bottom: 28px;">
+          <table style="width:100%; border-collapse: collapse;">
+            <tr>
+              <td style="color: #6b7280; font-size: 13px; padding: 6px 0; width: 110px;">Task</td>
+              <td style="color: #f1f5f9; font-weight: 600; font-size: 15px; padding: 6px 0;">${taskTitle}</td>
+            </tr>
+            <tr>
+              <td style="color: #6b7280; font-size: 13px; padding: 6px 0;">Project</td>
+              <td style="color: #f1f5f9; padding: 6px 0;">${projectName || 'N/A'}</td>
+            </tr>
+            <tr>
+              <td style="color: #6b7280; font-size: 13px; padding: 6px 0;">Deadline</td>
+              <td style="color: ${deadline ? '#fbbf24' : '#6b7280'}; font-weight: 600; padding: 6px 0;">${deadline ? new Date(deadline).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'No deadline set'}</td>
+            </tr>
+          </table>
+        </div>
+
+        <p style="color: #64748b; font-size: 13px; margin: 0;">Please log in to TaskMaster to view the full details and update your progress.</p>
       </div>
-      ` : ''}
-      <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0 20px 0;" />
-      <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-        This is an automated message from Team Task Manager. Please do not reply.
-      </p>
+      <div style="background: #111827; padding: 20px 40px; text-align: center; border-top: 1px solid #1F2937;">
+        <p style="margin: 0; color: #4b5563; font-size: 12px;">This is an automated notification from TaskMaster. Do not reply.</p>
+      </div>
     </div>
-  </div>
-`;
+  `
+});
 
-/**
- * Generate HTML for Task Assignment Email
- */
-const taskAssignedEmail = ({ userName, taskTitle, projectName, deadline }) => {
-  const isUrgent = new Date(deadline).getTime() - Date.now() < 24 * 60 * 60 * 1000;
-  
-  const content = `
-    <p>Hi <strong>${userName}</strong>,</p>
-    <p>You have been assigned a new task: <strong style="color: #3b82f6;">${taskTitle}</strong></p>
-    ${projectName ? `<p>Project: <strong>${projectName}</strong></p>` : ''}
-    <p>Deadline: <strong style="${isUrgent ? 'color: #ef4444;' : ''}">${new Date(deadline).toLocaleString()}</strong></p>
-    ${isUrgent ? `<p style="color: #ef4444; font-weight: bold;">⚠️ This task is due soon!</p>` : ''}
-  `;
+const projectAddedEmail = ({ userName, projectName, adminName }) => ({
+  subject: `📁 Added to Project: ${projectName}`,
+  html: `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0B0F19; color: #e2e8f0; border-radius: 16px; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, #0d9488, #3b82f6); padding: 32px 40px;">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #fff;">✅ TaskMaster</h1>
+        <p style="margin: 8px 0 0; color: rgba(255,255,255,0.8); font-size: 14px;">Team Task Manager</p>
+      </div>
+      <div style="padding: 36px 40px;">
+        <h2 style="color: #2dd4bf; margin: 0 0 8px;">You've Been Added to a Project</h2>
+        <p style="color: #94a3b8; margin: 0 0 28px;">Hello <strong style="color: #e2e8f0;">${userName}</strong>, you have been added to a new project.</p>
 
-  return {
-    subject: `New Task Assigned: ${taskTitle}`,
-    html: getBaseTemplate('New Task Assignment', content, `${process.env.FRONTEND_URL}/tasks`, 'View Task')
-  };
-};
+        <div style="background: #1F2937; border: 1px solid #374151; border-radius: 12px; padding: 24px; margin-bottom: 28px;">
+          <table style="width:100%; border-collapse: collapse;">
+            <tr>
+              <td style="color: #6b7280; font-size: 13px; padding: 6px 0; width: 110px;">Project</td>
+              <td style="color: #f1f5f9; font-weight: 600; font-size: 15px; padding: 6px 0;">${projectName}</td>
+            </tr>
+            <tr>
+              <td style="color: #6b7280; font-size: 13px; padding: 6px 0;">Added by</td>
+              <td style="color: #f1f5f9; padding: 6px 0;">${adminName || 'Admin'}</td>
+            </tr>
+          </table>
+        </div>
 
-/**
- * Generate HTML for Project Addition Email
- */
-const projectAddedEmail = ({ userName, projectName, adminName }) => {
-  const content = `
-    <p>Hi <strong>${userName}</strong>,</p>
-    <p><strong>${adminName}</strong> has added you to the project: <strong style="color: #8b5cf6;">${projectName}</strong>.</p>
-    <p>You can now view and manage tasks within this project.</p>
-  `;
+        <p style="color: #64748b; font-size: 13px; margin: 0;">Log in to TaskMaster to collaborate with your team on this project.</p>
+      </div>
+      <div style="background: #111827; padding: 20px 40px; text-align: center; border-top: 1px solid #1F2937;">
+        <p style="margin: 0; color: #4b5563; font-size: 12px;">This is an automated notification from TaskMaster. Do not reply.</p>
+      </div>
+    </div>
+  `
+});
 
-  return {
-    subject: `Added to Project: ${projectName}`,
-    html: getBaseTemplate('Welcome to the Project', content, `${process.env.FRONTEND_URL}/projects`, 'View Project')
-  };
-};
+const deadlineAlertEmail = ({ userName, taskTitle, projectName, deadline }) => ({
+  subject: `⚠️ Deadline Alert: "${taskTitle}" is due soon!`,
+  html: `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0B0F19; color: #e2e8f0; border-radius: 16px; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, #b45309, #ef4444); padding: 32px 40px;">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #fff;">✅ TaskMaster</h1>
+        <p style="margin: 8px 0 0; color: rgba(255,255,255,0.8); font-size: 14px;">Team Task Manager</p>
+      </div>
+      <div style="padding: 36px 40px;">
+        <h2 style="color: #fbbf24; margin: 0 0 8px;">⚠️ Deadline Alert</h2>
+        <p style="color: #94a3b8; margin: 0 0 28px;">Hello <strong style="color: #e2e8f0;">${userName}</strong>, a task assigned to you is due in <strong style="color: #f87171;">less than 24 hours!</strong></p>
 
-/**
- * Generate HTML for Deadline Reminder Email
- */
-const deadlineAlertEmail = ({ userName, taskTitle, projectName, deadline }) => {
-  const content = `
-    <p>Hi <strong>${userName}</strong>,</p>
-    <p>This is a reminder that your assigned task <strong style="color: #ef4444;">${taskTitle}</strong> is due in less than 24 hours.</p>
-    ${projectName ? `<p>Project: <strong>${projectName}</strong></p>` : ''}
-    <p>Deadline: <strong>${new Date(deadline).toLocaleString()}</strong></p>
-    <p>Please ensure you update the task status before the deadline.</p>
-  `;
+        <div style="background: #1F2937; border: 1px solid #f87171; border-radius: 12px; padding: 24px; margin-bottom: 28px;">
+          <table style="width:100%; border-collapse: collapse;">
+            <tr>
+              <td style="color: #6b7280; font-size: 13px; padding: 6px 0; width: 110px;">Task</td>
+              <td style="color: #f1f5f9; font-weight: 600; font-size: 15px; padding: 6px 0;">${taskTitle}</td>
+            </tr>
+            <tr>
+              <td style="color: #6b7280; font-size: 13px; padding: 6px 0;">Project</td>
+              <td style="color: #f1f5f9; padding: 6px 0;">${projectName || 'N/A'}</td>
+            </tr>
+            <tr>
+              <td style="color: #6b7280; font-size: 13px; padding: 6px 0;">Due by</td>
+              <td style="color: #f87171; font-weight: 700; font-size: 15px; padding: 6px 0;">${new Date(deadline).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</td>
+            </tr>
+          </table>
+        </div>
 
-  return {
-    subject: `⚠️ Urgent: Task Due Soon - ${taskTitle}`,
-    html: getBaseTemplate('Upcoming Deadline Reminder', content, `${process.env.FRONTEND_URL}/tasks`, 'Update Task Status')
-  };
-};
+        <p style="color: #64748b; font-size: 13px; margin: 0;">Please complete or update the status of this task as soon as possible.</p>
+      </div>
+      <div style="background: #111827; padding: 20px 40px; text-align: center; border-top: 1px solid #1F2937;">
+        <p style="margin: 0; color: #4b5563; font-size: 12px;">This is an automated notification from TaskMaster. Do not reply.</p>
+      </div>
+    </div>
+  `
+});
 
-module.exports = {
-  sendEmail,
-  taskAssignedEmail,
-  projectAddedEmail,
-  deadlineAlertEmail,
-  getBaseTemplate
-};
+module.exports = { sendEmail, taskAssignedEmail, projectAddedEmail, deadlineAlertEmail };
