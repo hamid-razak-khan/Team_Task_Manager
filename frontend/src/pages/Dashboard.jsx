@@ -29,6 +29,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [hoveredCard, setHoveredCard] = useState(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [expandedMember, setExpandedMember] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -226,33 +227,60 @@ const Dashboard = () => {
                   const perf = getPerformanceLevel(member.percentage);
                   return (
                     <div key={member.name} className="relative group">
-                      <div className="relative flex items-center justify-between p-4 bg-dark-800/60 rounded-2xl border border-white/5 hover:border-primary-500/30 hover:bg-dark-800 transition-all">
-                        <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shadow-sm
-                            ${i === 0 ? 'bg-gradient-to-br from-amber-300 to-amber-600 text-dark-900' : 
-                              i === 1 ? 'bg-gradient-to-br from-slate-200 to-slate-400 text-dark-900' : 
-                              i === 2 ? 'bg-gradient-to-br from-orange-400 to-amber-700 text-dark-900' : 
-                              'bg-dark-700 text-slate-400 border border-white/10'}`}>
-                            #{i + 1}
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-white group-hover:text-primary-300 transition-colors uppercase">{member.name}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${perf.bg} ${perf.color}`}>
-                                {perf.label}
-                              </span>
-                              <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-tighter">
-                                {member.percentage}%
-                              </span>
+                      <div 
+                        onClick={() => setExpandedMember(expandedMember === member.name ? null : member.name)}
+                        className="relative flex flex-col p-4 bg-dark-800/60 rounded-2xl border border-white/5 hover:border-primary-500/30 hover:bg-dark-800 transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shadow-sm
+                              ${i === 0 ? 'bg-gradient-to-br from-amber-300 to-amber-600 text-dark-900' : 
+                                i === 1 ? 'bg-gradient-to-br from-slate-200 to-slate-400 text-dark-900' : 
+                                i === 2 ? 'bg-gradient-to-br from-orange-400 to-amber-700 text-dark-900' : 
+                                'bg-dark-700 text-slate-400 border border-white/10'}`}>
+                              #{i + 1}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-white group-hover:text-primary-300 transition-colors uppercase">{member.name}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${perf.bg} ${perf.color}`}>
+                                  {perf.label}
+                                </span>
+                                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-tighter">
+                                  {member.percentage}%
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex flex-col items-end">
-                          <div className="text-xl font-black text-white tracking-tight">
-                            {Number(member.score).toFixed(1).replace(/\.0$/, '')}
+                          <div className="flex flex-col items-end">
+                            <div className="text-xl font-black text-white tracking-tight">
+                              {Number(member.score).toFixed(1).replace(/\.0$/, '')}
+                            </div>
+                            <div className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Score</div>
                           </div>
-                          <div className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Score</div>
                         </div>
+
+                        {/* Expandable Breakdown */}
+                        {expandedMember === member.name && (
+                          <div className="mt-4 pt-4 border-t border-white/5 grid grid-cols-4 gap-2 text-center animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div>
+                              <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Completed</div>
+                              <div className="text-sm font-black text-emerald-400">{member.completed}</div>
+                            </div>
+                            <div>
+                              <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">On-Time</div>
+                              <div className="text-sm font-black text-blue-400">{member.onTime}</div>
+                            </div>
+                            <div>
+                              <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Overdue</div>
+                              <div className="text-sm font-black text-red-400">{member.overdue}</div>
+                            </div>
+                            <div>
+                              <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Delayed</div>
+                              <div className="text-sm font-black text-amber-400">{Math.round(member.delayHours)}h</div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
