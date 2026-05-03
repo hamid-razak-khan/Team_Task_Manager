@@ -248,7 +248,9 @@ const Dashboard = () => {
                           </div>
                         </div>
                         <div className="flex flex-col items-end">
-                          <div className="text-xl font-black text-white tracking-tight">{member.score}</div>
+                          <div className="text-xl font-black text-white tracking-tight">
+                            {Number(member.score).toFixed(1).replace(/\.0$/, '')}
+                          </div>
                           <div className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Score</div>
                         </div>
                       </div>
