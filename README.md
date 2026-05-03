@@ -19,7 +19,7 @@ Built using the MERN stack with advanced production-ready features like **real-t
 **Backend:**
 * Node.js & Express.js
 * Socket.io (WebSocket Server)
-* Nodemailer (Asynchronous Email Processing)
+* Brevo (Sendinblue) Transactional Email API (Asynchronous Email Processing)
 
 **Database & Cloud:**
 * MongoDB Atlas (Mongoose & Aggregation Pipelines)
@@ -69,6 +69,9 @@ Built using the MERN stack with advanced production-ready features like **real-t
 * `POST /api/auth/login`
 * `GET  /api/auth/me`
 * `POST /api/auth/logout`
+* `GET  /api/auth/users` (Fetch all users in the same organization)
+* `POST /api/auth/forgot-password` (Send password reset link via email)
+* `POST /api/auth/reset-password` (Reset password using token)
 * `POST /api/invite` (Admin Only: Send email invites)
 
 ### 📁 Projects & Tasks
@@ -116,8 +119,8 @@ Create `.env` inside `backend/`:
 PORT=5000
 MONGODB_URI=your_mongodb_uri
 JWT_SECRET=your_secret
-EMAIL_USER=your_email
-EMAIL_PASS=your_app_password
+BREVO_API_KEY=your_brevo_api_key
+EMAIL_USER=your_verified_sender_email
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
@@ -149,7 +152,7 @@ npm run dev
 
 ## 🎯 Why This Project Stands Out
 
-* **Non-Blocking Architecture:** Heavy tasks like email SMTP transactions are handled asynchronously to prevent UI freezing.
+* **Non-Blocking Architecture:** Heavy tasks like transactional emails (via Brevo API) are handled asynchronously to prevent UI freezing.
 * **Complex Data Aggregation:** Uses native MongoDB aggregations for real-time analytics.
 * **Full-Duplex Communication:** Integrates Socket.io efficiently alongside traditional REST endpoints.
 * **Enterprise Features:** Role-based access, organizational isolation, and token-based email onboarding.
