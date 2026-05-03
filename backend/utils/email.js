@@ -9,6 +9,8 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  // Force IPv4 because Railway's IPv6 routing often drops SMTP connections to Gmail
+  family: 4,
 });
 
 /**
