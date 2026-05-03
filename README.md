@@ -2,149 +2,90 @@
 
 ## 📌 Project Overview
 
-A full-stack Team Task Management application that enables teams to efficiently manage projects, assign tasks, and track progress with role-based access control.
+A full-stack Team Task Management SaaS application that enables organizations to efficiently manage projects, assign tasks, and track progress with role-based access control.
 
-Built using the MERN stack with real-world features like authentication, notifications, and email alerts, this application simulates a production-ready system.
+Built using the MERN stack with advanced production-ready features like **real-time Socket.io messaging**, **live performance analytics**, **Cloudinary file attachments**, and **automated email alerts** using a decoupled background process architecture.
 
 ---
 
 ## 🛠️ Tech Stack
 
 **Frontend:**
-
 * React (Vite)
 * Tailwind CSS
+* Recharts (Analytics Data Visualization)
+* Socket.io-client (Real-time WebSockets)
 
 **Backend:**
+* Node.js & Express.js
+* Socket.io (WebSocket Server)
+* Nodemailer (Asynchronous Email Processing)
 
-* Node.js
-* Express.js
-
-**Database:**
-
-* MongoDB Atlas
-
-**Authentication:**
-
+**Database & Cloud:**
+* MongoDB Atlas (Mongoose & Aggregation Pipelines)
+* Cloudinary (Secure File & Image Storage)
 * JWT (JSON Web Token)
 * bcrypt (Password Hashing)
-
-**Notifications:**
-
-* In-app notification system
-* Email alerts using Nodemailer (Gmail SMTP)
 
 ---
 
 ## ✨ Key Features
 
-### 🔐 Authentication & Security
+### 🔐 Authentication, Security & Workspaces
+* User Registration & Login via JWT
+* Organization-based tenant isolation (users are grouped by organization)
+* Token-based email invitations for onboarding new team members
+* Secure, cross-origin cookie handling (SameSite=None, Secure=true)
 
-* User Registration & Login
-* JWT-based authentication
-* Secure password hashing using bcrypt
+### 💬 Real-Time Direct Messaging (Socket.io)
+* Instant messaging between members of shared projects/tasks
+* Live typing indicators and real-time read/unread badge counts
+* Dedicated inbox for active conversations
 
-### 🧑‍🤝‍🧑 Role-Based Access Control (RBAC)
+### 📊 Performance Analytics & Leaderboard
+* MongoDB Aggregation pipelines calculate live productivity scores
+* Recharts-powered graphical dashboard tracking completed vs overdue tasks
+* Gamified Productivity Leaderboard to track top team performers
 
-* **Admin:**
+### 📁 Advanced Task & Project Management
+* Create, update, delete projects and manage team access
+* Assign tasks, set strict deadlines, and track status (Pending / In Progress / Completed)
+* **File Attachments:** Users can securely upload and attach files (images, PDFs) directly to tasks using Cloudinary.
 
-  * Manage projects & tasks
-  * Assign tasks
-  * View all data
-* **Member:**
-
-  * View assigned tasks
-  * Update task status
-
----
-
-### 📁 Project Management
-
-* Create, update, delete projects
-* Add/remove team members
-* View all projects
-
----
-
-### ✅ Task Management
-
-* Create and assign tasks
-* Track status: Pending / In Progress / Completed
-* Set deadlines
+### 🔔 Smart Notification System (Decoupled & Non-Blocking)
+* In-app notification bell with unread message counts
+* Instant automated emails for Task Assignments, Project Additions, and Deadline reminders
+* Highly performant: Email dispatching runs entirely in the background thread, ensuring instant <50ms UI feedback
+* Cron-job integration for detecting tasks due within 24 hours
 
 ---
 
-### 🔔 Smart Notification System
+## 🔗 API Endpoints Structure
 
-* One-time notifications (no spam)
-* Triggered when:
+> All protected routes require HttpOnly JWT Cookies
 
-  * Task assigned
-  * Added to project
-  * Deadline < 24 hours
-* Notification bell with unread count
+### 🔐 Auth & Organization
+* `POST /api/auth/register`
+* `POST /api/auth/login`
+* `GET  /api/auth/me`
+* `POST /api/auth/logout`
+* `POST /api/invite` (Admin Only: Send email invites)
 
----
+### 📁 Projects & Tasks
+* `GET, POST, PUT, DELETE /api/projects`
+* `GET, POST, PUT, DELETE /api/tasks`
 
-### 📧 Email Alerts
+### 💬 Chat & Messages
+* `GET, POST /api/chats` (Fetch/Create conversation threads)
+* `GET, POST /api/messages/:chatId` (Fetch/Send messages)
 
-* Automated emails for:
-
-  * Task assignment
-  * Project addition
-  * Deadline reminders
-* Implemented using Nodemailer
-* Uses secure environment variables
-
----
-
-### ⏰ Deadline Tracking
-
-* Detects tasks due within 24 hours
-* Sends both in-app + email alerts (only once)
-
----
-
-## 🧠 System Design Highlights
-
-* RESTful API architecture
-* Role-based middleware authorization
-* Scalable MongoDB schema design
-* Efficient notification system with read/unread logic
-* Email deduplication using flags
-
----
-
-## 🔗 API Endpoints
-
-> All protected routes require:
-> Authorization: Bearer `<token>`
-
-### 🔐 Auth
-
-* POST `/api/auth/register`
-* POST `/api/auth/login`
-* GET `/api/auth/me`
-
-### 📁 Projects
-
-* GET `/api/projects`
-* POST `/api/projects` (Admin)
-* PUT `/api/projects/:id` (Admin)
-* DELETE `/api/projects/:id` (Admin)
-
-### ✅ Tasks
-
-* GET `/api/tasks`
-* POST `/api/tasks` (Admin)
-* PUT `/api/tasks/:id`
-* DELETE `/api/tasks/:id` (Admin)
+### 📊 Analytics & Uploads
+* `GET  /api/analytics` (Fetch leaderboard & chart data)
+* `POST /api/upload` (Upload task attachments via Cloudinary)
 
 ### 🔔 Notifications
-
-* GET `/api/notifications`
-* PUT `/api/notifications/:id`
-* POST `/api/notifications/check-deadlines`
+* `GET, PUT /api/notifications`
+* `POST /api/notifications/check-deadlines` (Triggered via cron)
 
 ---
 
@@ -153,8 +94,8 @@ Built using the MERN stack with real-world features like authentication, notific
 ### 1️⃣ Clone Repository
 
 ```bash
-git clone https://github.com/your-username/team-task-manager.git
-cd team-task-manager
+git clone https://github.com/hamid-razak-khan/Team_Task_Manager.git
+cd Team_Task_Manager
 ```
 
 ### 2️⃣ Install Dependencies
@@ -167,11 +108,9 @@ cd ../frontend
 npm install
 ```
 
----
-
 ### 3️⃣ Environment Variables (.env)
 
-Create `.env` inside backend:
+Create `.env` inside `backend/`:
 
 ```env
 PORT=5000
@@ -179,21 +118,21 @@ MONGODB_URI=your_mongodb_uri
 JWT_SECRET=your_secret
 EMAIL_USER=your_email
 EMAIL_PASS=your_app_password
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+FRONTEND_URL=http://localhost:5173
 ```
 
----
-
-### 4️⃣ Run Application
+### 4️⃣ Run Application Locally
 
 **Backend:**
-
 ```bash
 cd backend
 npm run dev
 ```
 
 **Frontend:**
-
 ```bash
 cd frontend
 npm run dev
@@ -203,25 +142,21 @@ npm run dev
 
 ## 🚀 Deployment
 
-* Backend deployed on Railway
-* Frontend deployed on Vercel
+* **Backend:** Ready for deployment on Railway (Uses `origin: true` CORS for dynamic routing)
+* **Frontend:** Ready for deployment on Vercel (Includes `vercel.json` for React Router SPA support)
 
 ---
 
 ## 🎯 Why This Project Stands Out
 
-* Real-world system design
-* Notification system with no spam logic
-* Email integration with secure configuration
-* Role-based architecture
-* Clean UI + scalable backend
+* **Non-Blocking Architecture:** Heavy tasks like email SMTP transactions are handled asynchronously to prevent UI freezing.
+* **Complex Data Aggregation:** Uses native MongoDB aggregations for real-time analytics.
+* **Full-Duplex Communication:** Integrates Socket.io efficiently alongside traditional REST endpoints.
+* **Enterprise Features:** Role-based access, organizational isolation, and token-based email onboarding.
 
 ---
 
-## 📽️ Demo & Links
+## 📽️ Links
 
-* 🔗 Live App: (Add your Railway/Vercel link)
-* 🔗 GitHub Repo: (Add link)
-* 🎥 Demo Video: (Add drive link)
-
----
+* 🔗 **Live App:** https://team-task-manager-seven.vercel.app/ (Example)
+* 🔗 **GitHub Repo:** https://github.com/hamid-razak-khan/Team_Task_Manager
