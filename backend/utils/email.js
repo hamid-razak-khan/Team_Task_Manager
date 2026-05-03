@@ -1,44 +1,38 @@
-const nodemailer = require('nodemailer');
+const SibApiV3Sdk = require('@getbrevo/brevo');
 
-// Create reusable transporter using Gmail SMTP
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true, // SSL
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  // Force IPv4 because Railway's IPv6 routing often drops SMTP connections to Gmail
-  family: 4,
-});
+// Initialize Brevo API client
+const brevoClient = SibApiV3Sdk.ApiClient.instance;
+brevoClient.authentications['api-key'].apiKey = process.env.BREVO_API_KEY;
+const transactionalApi = new SibApiV3Sdk.TransactionalEmailsApi();
 
 /**
- * Send an email notification.
+ * Send a transactional email via Brevo.
  * All failures are caught and logged — they never crash the server.
  *
  * @param {string} to      - recipient email
  * @param {string} subject - email subject
  * @param {string} html    - HTML email body
+ * @returns {boolean}      - true on success, false on failure
  */
 const sendEmail = async (to, subject, html) => {
-  // Silently skip if email credentials are not configured
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.warn('[Email] Skipped — EMAIL_USER or EMAIL_PASS not set in .env');
+  if (!process.env.BREVO_API_KEY) {
+    console.warn('[Email] Skipped — BREVO_API_KEY not set in environment');
     return false;
   }
 
   try {
-    await transporter.sendMail({
-      from: `"TaskMaster" <${process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      html,
-    });
-    console.log(`[Email] ✅ Sent to ${to} — "${subject}"`);
+    const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+    sendSmtpEmail.sender = { name: 'TaskMaster', email: process.env.EMAIL_USER || 'noreply@taskmaster.app' };
+    sendSmtpEmail.to = [{ email: to }];
+    sendSmtpEmail.subject = subject;
+    sendSmtpEmail.htmlContent = html;
+
+    const result = await transactionalApi.sendTransacEmail(sendSmtpEmail);
+    console.log(`[Email] ✅ Sent to ${to} via Brevo — "${subject}" (ID: ${result?.body?.messageId || 'N/A'})`);
     return true;
   } catch (err) {
-    console.error(`[Email] ❌ Failed to send to ${to}:`, err.message);
+    const errMsg = err?.response?.body?.message || err.message;
+    console.error(`[Email] ❌ Brevo failed to send to ${to}:`, errMsg);
     return false;
   }
 };
