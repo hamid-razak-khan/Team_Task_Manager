@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const Invite = require('../models/Invite');
 const auth = require('../middleware/auth');
 const roleCheck = require('../middleware/roleCheck');
-const { sendEmail } = require('../utils/email');
+const { sendEmail, getBaseTemplate } = require('../utils/email');
 
 const router = express.Router();
 
@@ -30,15 +30,13 @@ router.post('/', [auth, roleCheck(['Admin'])], async (req, res) => {
 
     const joinLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/join?token=${token}`;
 
-    const html = `
-      <div style="font-family: sans-serif; max-width: 600px; margin: auto;">
-        <h2>You're invited to join TaskMaster!</h2>
-        <p>You have been invited as a <strong>${role}</strong>.</p>
-        <p>Click the link below to accept your invitation and create your account:</p>
-        <a href="${joinLink}" style="display: inline-block; padding: 10px 20px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 5px;">Join Now</a>
-        <p>This link expires in 24 hours.</p>
-      </div>
+    const content = `
+      <p>You have been invited to join the team as a <strong>${role}</strong>.</p>
+      <p>Click the button below to accept your invitation and set up your account.</p>
+      <p style="color: #ef4444; font-size: 14px; margin-top: 15px;">⚠️ This link expires in 24 hours.</p>
     `;
+
+    const html = getBaseTemplate("You're invited to join TaskMaster!", content, joinLink, "Accept Invitation");
 
     // Send email asynchronously in the background so the UI doesn't hang
     sendEmail(email, "You're invited to join TaskMaster", html)
