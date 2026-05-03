@@ -12,6 +12,8 @@ import Projects from './pages/Projects';
 import Tasks from './pages/Tasks';
 import Chat from './pages/Chat';
 import Join from './pages/Join';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 // ── Loading spinner ────────────────────────────────────────────────────────────
 const Spinner = () => (
@@ -63,6 +65,8 @@ const App = () => (
         <Route path="/login"   element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/register"element={<PublicRoute><Register /></PublicRoute>} />
         <Route path="/join"    element={<PublicRoute><Join /></PublicRoute>} />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+        <Route path="/reset-password/:token" element={<PublicRoute><ResetPassword /></PublicRoute>} />
 
         {/* Protected pages — share a single persistent layout */}
         <Route element={<AuthLayout />}>

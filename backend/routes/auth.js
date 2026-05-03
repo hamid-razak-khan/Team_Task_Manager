@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const Organization = require('../models/Organization');
 const Invite = require('../models/Invite');
+const { sendEmail } = require('../utils/email');
 
 const router = express.Router();
 
@@ -112,6 +113,74 @@ router.get('/users', require('../middleware/auth'), async (req, res) => {
   try {
     const users = await User.find({ organizationId: req.user.organizationId }).select('-password');
     res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+// POST /api/auth/forgot-password
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    
+    // Do not reveal if user exists or not for security
+    if (!user) {
+      return res.json({ message: 'If email exists, reset link has been sent' });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 mins
+
+    user.resetToken = resetToken;
+    user.resetTokenExpiry = resetTokenExpiry;
+    await user.save();
+
+    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
+    
+    const html = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: auto;">
+        <h2>Password Reset Request</h2>
+        <p>You requested to reset your TaskMaster password.</p>
+        <p>Click the link below to set a new password:</p>
+        <a href="${resetLink}" style="display: inline-block; padding: 10px 20px; background-color: #8b5cf6; color: white; text-decoration: none; border-radius: 5px;">Reset Password</a>
+        <p>This link expires in 15 minutes.</p>
+        <p>If you did not request this, please ignore this email.</p>
+      </div>
+    `;
+
+    // Send asynchronously so UI doesn't hang
+    sendEmail(user.email, "Password Reset Request", html)
+      .catch(err => console.error('Forgot password email failed:', err));
+
+    res.json({ message: 'If email exists, reset link has been sent' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/auth/reset-password
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    
+    const user = await User.findOne({
+      resetToken: token,
+      resetTokenExpiry: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid or expired reset token' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    
+    user.resetToken = undefined;
+    user.resetTokenExpiry = undefined;
+    
+    await user.save();
+
+    res.json({ message: 'Password has been successfully reset. You can now log in.' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
