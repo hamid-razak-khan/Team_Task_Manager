@@ -158,5 +158,5 @@ npm run dev
 
 ## 📽️ Links
 
-* 🔗 **Live App:** https://team-task-manager-seven.vercel.app/ (Example)
+* 🔗 **Live App:** https://team-task-manager-chi-one.vercel.app/
 * 🔗 **GitHub Repo:** https://github.com/hamid-razak-khan/Team_Task_Manager
