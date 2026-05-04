@@ -11,7 +11,17 @@ const router = express.Router();
 
 router.get('/', auth, async (req, res) => {
   try {
-    const projects = await Project.find({ organizationId: req.user.organizationId }).populate('admin', 'name email').populate('members', 'name email');
+    const query = { organizationId: req.user.organizationId };
+    
+    // Members only see projects they are assigned to (or created)
+    if (req.user.role !== 'Admin') {
+      query.$or = [{ admin: req.user._id }, { members: req.user._id }];
+    }
+
+    const projects = await Project.find(query)
+      .populate('admin', 'name email')
+      .populate('members', 'name email');
+      
     res.json(projects);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -79,7 +89,23 @@ router.get('/:id', auth, async (req, res) => {
     const project = await Project.findById(req.params.id)
       .populate('admin', 'name email')
       .populate('members', 'name email');
+      
     if (!project) return res.status(404).json({ error: 'Project not found' });
+    
+    // Ensure the project belongs to the user's organization
+    if (project.organizationId.toString() !== req.user.organizationId.toString()) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    // Members can only access projects they belong to (or created)
+    if (req.user.role !== 'Admin') {
+      const isMember = project.members.some(m => m._id.toString() === req.user._id.toString());
+      const isAdmin = project.admin._id.toString() === req.user._id.toString();
+      if (!isMember && !isAdmin) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    }
+    
     res.json(project);
   } catch (err) {
     res.status(500).json({ error: err.message });
