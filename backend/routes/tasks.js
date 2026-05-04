@@ -95,7 +95,7 @@ router.put('/:id', auth, async (req, res) => {
     if (!task) return res.status(404).json({ error: 'Task not found' });
 
     if (statusChanged) {
-      const admins = await User.find({ role: 'Admin' }, '_id');
+      const admins = await User.find({ role: 'Admin', organizationId: req.user.organizationId }, '_id');
       const memberName = req.user.name;
       const taskTitle = task.title;
 
