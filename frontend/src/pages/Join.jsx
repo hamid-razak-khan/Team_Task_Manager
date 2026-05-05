@@ -32,7 +32,11 @@ const Join = () => {
         setInviteData(res.data);
         setEmail(res.data.email);
       } catch (err) {
-        setError(err.response?.data?.error || 'Invalid or expired invite link.');
+        if (!err.response) {
+          setError('Unable to connect to the server. Please check your internet connection or try again later.');
+        } else {
+          setError(err.response.data?.error || 'This invite link is invalid or has expired.');
+        }
       } finally {
         setLoading(false);
       }

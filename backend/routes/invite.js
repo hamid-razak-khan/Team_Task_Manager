@@ -56,6 +56,7 @@ router.get('/:token', async (req, res) => {
   try {
     const invite = await Invite.findOne({ token: req.params.token, used: false, expiresAt: { $gt: new Date() } }).populate('organizationId', 'name');
     if (!invite) return res.status(400).json({ error: 'Invalid or expired invite token.' });
+    if (!invite.organizationId) return res.status(400).json({ error: 'Organization associated with this invite no longer exists.' });
 
     res.json({ email: invite.email, role: invite.role, organizationName: invite.organizationId.name });
   } catch (err) {
