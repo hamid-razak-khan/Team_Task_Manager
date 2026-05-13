@@ -129,13 +129,15 @@ router.post('/forgot-password', async (req, res) => {
     }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 mins
+    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     user.resetToken = resetToken;
     user.resetTokenExpiry = resetTokenExpiry;
     await user.save();
 
-    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
+    // Remove trailing slash from FRONTEND_URL if it exists
+    const baseUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/+$/, '');
+    const resetLink = `${baseUrl}/reset-password/${resetToken}`;
     
     const html = `
       <div style="font-family: sans-serif; max-width: 600px; margin: auto;">
@@ -143,7 +145,7 @@ router.post('/forgot-password', async (req, res) => {
         <p>You requested to reset your TaskMaster password.</p>
         <p>Click the link below to set a new password:</p>
         <a href="${resetLink}" style="display: inline-block; padding: 10px 20px; background-color: #8b5cf6; color: white; text-decoration: none; border-radius: 5px;">Reset Password</a>
-        <p>This link expires in 15 minutes.</p>
+        <p>This link expires in 60 minutes.</p>
         <p>If you did not request this, please ignore this email.</p>
       </div>
     `;
@@ -165,7 +167,7 @@ router.post('/reset-password', async (req, res) => {
     
     const user = await User.findOne({
       resetToken: token,
-      resetTokenExpiry: { $gt: Date.now() }
+      resetTokenExpiry: { $gt: new Date() }
     });
 
     if (!user) {
