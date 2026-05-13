@@ -28,7 +28,9 @@ router.post('/', [auth, roleCheck(['Admin'])], async (req, res) => {
 
     await invite.save();
 
-    const joinLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/join?token=${token}`;
+    // Priority: FRONTEND_URL (env) > Deployment link > Localhost
+    const baseUrl = (process.env.FRONTEND_URL || 'https://team-task-manager-chi-one.vercel.app').replace(/\/+$/, '');
+    const joinLink = `${baseUrl}/join?token=${token}`;
 
     const html = `
       <div style="font-family: sans-serif; max-width: 600px; margin: auto;">

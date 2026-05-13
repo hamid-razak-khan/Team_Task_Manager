@@ -135,8 +135,8 @@ router.post('/forgot-password', async (req, res) => {
     user.resetTokenExpiry = resetTokenExpiry;
     await user.save();
 
-    // Remove trailing slash from FRONTEND_URL if it exists
-    const baseUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/+$/, '');
+    // Priority: FRONTEND_URL (env) > Deployment link > Localhost
+    const baseUrl = (process.env.FRONTEND_URL || 'https://team-task-manager-chi-one.vercel.app').replace(/\/+$/, '');
     const resetLink = `${baseUrl}/reset-password/${resetToken}`;
     
     const html = `

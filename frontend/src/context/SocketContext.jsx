@@ -7,9 +7,10 @@ const SocketContext = createContext({ socket: null, connected: false, unreadMess
 
 export const useSocket = () => useContext(SocketContext);
 
+const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost';
 const BACKEND = import.meta.env.VITE_SOCKET_URL ||
   (import.meta.env.VITE_API_URL?.replace('/api', '')) ||
-  'http://localhost:5000';
+  (isLocal ? 'http://localhost:5000' : 'https://teamtaskmanager-production-76cd.up.railway.app');
 
 export const SocketProvider = ({ children }) => {
   const { user } = useAuth();
