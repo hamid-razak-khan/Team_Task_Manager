@@ -7,21 +7,9 @@ const SocketContext = createContext({ socket: null, connected: false, unreadMess
 
 export const useSocket = () => useContext(SocketContext);
 
-const getBackendURL = () => {
-  let url = import.meta.env.VITE_SOCKET_URL || 
-            import.meta.env.VITE_API_URL || 
-            'http://localhost:5000';
-  
-  url = url.trim();
-  if (url && !url.startsWith('http')) {
-    url = `https://${url}`;
-  }
-  
-  // Remove /api and trailing slashes for socket connection
-  return url.replace(/\/api\/?$/, '').replace(/\/+$/, '');
-};
-
-const BACKEND = getBackendURL();
+const BACKEND = import.meta.env.VITE_SOCKET_URL ||
+  (import.meta.env.VITE_API_URL?.replace('/api', '')) ||
+  'http://localhost:5000';
 
 export const SocketProvider = ({ children }) => {
   const { user } = useAuth();

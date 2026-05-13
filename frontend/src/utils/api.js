@@ -1,15 +1,8 @@
 import axios from 'axios';
 
-let apiURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-// Normalize URL: trim whitespace and ensure protocol for production
-apiURL = apiURL.trim();
-if (apiURL && !apiURL.startsWith('http')) {
-  apiURL = `https://${apiURL}`;
-}
-
-// Clean trailing slashes and ensure /api
-const baseURL = apiURL.replace(/\/+$/, '').replace(/\/api$/, '') + '/api';
+const apiURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Ensure the URL ends with /api (without duplicating it)
+const baseURL = apiURL.endsWith('/api') ? apiURL : apiURL.replace(/\/$/, '') + '/api';
 
 const api = axios.create({
   baseURL,
@@ -17,4 +10,3 @@ const api = axios.create({
 });
 
 export default api;
-
