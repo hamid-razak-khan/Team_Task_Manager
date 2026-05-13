@@ -196,7 +196,21 @@ app.use('/api/chats',         chatRoutes);
 app.use('/api/upload',        uploadRoutes);
 app.use('/api/analytics',     analyticsRoutes);
 
-app.get('/', (req, res) => res.send('Team Task Manager API is running'));
+app.get('/', (req, res) => {
+  res.json({
+    name: 'Team Task Manager API',
+    status: 'running',
+    version: '1.0.0',
+    endpoints: '/api/{auth,projects,tasks,notifications,messages,chats,upload,analytics,invite}',
+  });
+});
+
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+  });
+});
 
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
